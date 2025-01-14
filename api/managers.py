@@ -4,6 +4,9 @@ from django.db.models import Q
 
 
 class CustomUserManager(UserManager):
+    def create(self, email, username, password, **extra_fields):
+        return self.create_user(email, username, password, **extra_fields)
+    
     def create_user(self, email, username, password, **extra_fields):
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
@@ -16,7 +19,7 @@ class CustomUserManager(UserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, username, password=None, **extra_fields):
+    def create_superuser(self, email, username, password, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
 
@@ -25,7 +28,7 @@ class CustomUserManager(UserManager):
         if extra_fields.get("is_superuser") is not True:
             raise ValueError("Superuser must have is_superuser=True.")
 
-        return self._create_user(email, username, password, **extra_fields)
+        return self.create_user(email, username, password, **extra_fields)
     
 
 class PostManager(models.Manager):

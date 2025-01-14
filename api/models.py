@@ -1,15 +1,11 @@
 import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.conf import settings
 from .managers import CustomUserManager,PostManager
 from django.utils.text import slugify
 # Create your models here.
-
-User = get_user_model()
-
 
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
@@ -54,7 +50,7 @@ class Post(models.Model):
         (PRIVATE,'private'),
     ]
     
-    author = models.ForeignKey(User, related_name='posts', on_delete=models.CASCADE)
+    author = models.ForeignKey(CustomUser, related_name='posts', on_delete=models.CASCADE)
     title = models.CharField(max_length=50)
     content = models.TextField()
     image = models.ImageField(upload_to='articles/')
@@ -83,7 +79,7 @@ class Post(models.Model):
     
     
 class Comment(models.Model):
-    user = models.ForeignKey(User, related_name='comments', on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUser, related_name='comments', on_delete=models.CASCADE)
     post = models.ForeignKey(Post, related_name='comments', on_delete=models.CASCADE)
     reply = models.ForeignKey(
         "self",
@@ -105,7 +101,7 @@ class Comment(models.Model):
 
 
 class PostLike(models.Model):
-    user = models.ForeignKey(User, related_name='likes', on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUser, related_name='likes', on_delete=models.CASCADE)
     post = models.ForeignKey(Post, related_name='likes', on_delete=models.CASCADE)
     is_liked = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now=True)    
@@ -119,8 +115,8 @@ class PostLike(models.Model):
 
 
 class Relation(models.Model):
-    from_user = models.ForeignKey(User, related_name='followings', on_delete=models.CASCADE)
-    to_user = models.ForeignKey(User, related_name='follower', on_delete=models.CASCADE)
+    from_user = models.ForeignKey(CustomUser, related_name='followings', on_delete=models.CASCADE)
+    to_user = models.ForeignKey(CustomUser, related_name='follower', on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
