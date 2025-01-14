@@ -15,12 +15,23 @@ class CustomUserInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
+            "id",
             "username",
             "email",
             "full_name",
             "is_active",
             "phone_number",
             "avatar",
+            'first_name',
+            'last_name',
+            'info'
+        ]
+        read_only_fields = [
+            'id',
+            'username',
+            'email',
+            'full_name',
+            'is_active',
         ]
 
 
@@ -69,9 +80,13 @@ class UserLoginSerializer(serializers.Serializer):
         user = authenticate(email, password)
         if user and user.is_active:
             refresh = RefreshToken.for_user(user=user)
+            access = refresh.access_token
+            # add extra field to payload of jwt
+            access['email'] = user.email
+            
             attrs["user"] = user
             attrs["refresh"] = str(refresh)
-            attrs["access"] = str(refresh.access_token)
+            attrs["access"] = str(access)
             return attrs
         raise serializers.ValidationError("email or password incorrect!!")
 

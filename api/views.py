@@ -2,6 +2,8 @@ from rest_framework import views
 from rest_framework import status
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import (
     UserSignUpSerializer,
     UserActivationRequestSerializer,
@@ -85,7 +87,7 @@ class PasswordResetView(views.APIView):
             data = {
                 "message": (
                     "your token is valid! now you can send post request to this endpoint to reset password!"
-                    ),
+                ),
                 "data": srz_data.data,
             }
             return Response(data=data, status=status.HTTP_200_OK)
@@ -108,3 +110,45 @@ class PasswordResetView(views.APIView):
             "data": srz_data.errors if srz_data.is_valid(raise_exception=False) else "",
         }
         return Response(data=data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LogoutView(views.APIView):
+    def post(self, request):
+        refresh = request.data.get("refresh")
+        if refresh:
+            try:
+                token = RefreshToken(refresh)
+                token.blacklist()
+                return Response(
+                    {"message": "you logged out!!"}, status=status.HTTP_200_OK
+                )
+            except Exception as e:
+                return Response(
+                    {"message": f"{e} invalid refresh token!!"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        return Response(
+            {"message": "refresh token is required!!"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class UserInfoView(views.APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get(self, request):
+        user = request.user
+        srz_data = CustomUserInfoSerializer(instance=user)
+        return Response(data=srz_data.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        user = request.user
+        srz_data = CustomUserInfoSerializer(
+            instance=user, data=request.data, partial=True
+        )
+        if srz_data.is_valid():
+            srz_data.save()
+            return Response(data=srz_data.data, status=status.HTTP_202_ACCEPTED)
+        return Response(data=srz_data.errors, status=status.HTTP_400_BAD_REQUEST)
