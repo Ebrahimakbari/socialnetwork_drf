@@ -173,3 +173,37 @@ class PostSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         validated_data["author"] = request.user
         return Post.objects.create(**validated_data)
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+    replays = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Comment
+        fields = [
+            "id",
+            "user",
+            "post",
+            "reply",
+            "is_reply",
+            "content",
+            "created_at",
+            "replays",
+        ]
+        read_only_fields = [
+            "id",
+            "created_at",
+        ]
+
+    # To fetch nested replies
+    def get_replays(self, obj):
+        if obj.is_reply:
+            return None
+        qs = obj.replys.all()
+        return CommentSerializer(instance=qs, many=True, context=self.context).data
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        validated_data["user"] = request.user
+        return super().create(validated_data)

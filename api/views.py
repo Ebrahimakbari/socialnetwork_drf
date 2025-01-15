@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import Post
+from .models import Post, Comment
 from .serializers import (
     UserSignUpSerializer,
     UserActivationRequestSerializer,
@@ -15,6 +15,7 @@ from .serializers import (
     PasswordResetCheckSerializer,
     PasswordResetSerializer,
     PostSerializer,
+    CommentSerializer,
 )
 
 
@@ -177,6 +178,14 @@ class UserInfoView(views.APIView):
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.published.all()
     serializer_class = PostSerializer
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
     permission_classes = [
         IsAuthenticated,
     ]
