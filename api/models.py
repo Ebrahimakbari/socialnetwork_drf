@@ -70,8 +70,9 @@ class Post(models.Model):
     def __str__(self):
         return self.title
     
-    def save(self):
-        self.slug = slugify(self.title)
+    def save(self,*args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
         return super().save()
     
     def get_likes_count(self):

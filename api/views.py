@@ -1,9 +1,10 @@
-from rest_framework import views
+from rest_framework import views, viewsets
 from rest_framework import status
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from .models import Post
 from .serializers import (
     UserSignUpSerializer,
     UserActivationRequestSerializer,
@@ -13,6 +14,7 @@ from .serializers import (
     PasswordResetRequestSerializer,
     PasswordResetCheckSerializer,
     PasswordResetSerializer,
+    PostSerializer,
 )
 
 
@@ -63,6 +65,24 @@ class UserLoginView(views.APIView):
             res_data.is_valid(raise_exception=True)
             return Response(data=res_data.data, status=status.HTTP_200_OK)
         return Response(data=srz_data.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GetAccessToken(views.APIView):
+    def post(self, request):
+        refresh = request.data.get("refresh")
+        if not refresh:
+            return Response(
+                data={"message": "refresh token is required!!!"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            refresh = RefreshToken(refresh)
+            access = refresh.access_token
+            refresh.set_jti()  # generate new refresh token
+            data = {"access": str(access), "refresh": str(refresh)}
+            return Response(data=data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response(data={"message": e}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class PasswordResetRequestView(views.APIView):
@@ -152,3 +172,11 @@ class UserInfoView(views.APIView):
             srz_data.save()
             return Response(data=srz_data.data, status=status.HTTP_202_ACCEPTED)
         return Response(data=srz_data.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PostViewSet(viewsets.ModelViewSet):
+    queryset = Post.published.all()
+    serializer_class = PostSerializer
+    permission_classes = [
+        IsAuthenticated,
+    ]

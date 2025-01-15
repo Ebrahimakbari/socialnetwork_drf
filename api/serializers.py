@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Post, Comment, PostLike, Relation
-from django.db.models import F
+from django.utils.text import slugify
 from rest_framework_simplejwt.tokens import RefreshToken
 from .authentications import authenticate
 from django.contrib.auth import get_user_model
@@ -10,7 +10,7 @@ User = get_user_model()
 
 
 class CustomUserInfoSerializer(serializers.ModelSerializer):
-    full_name = serializers.CharField(source="get_full_name")
+    full_name = serializers.CharField(source="get_full_name", read_only=True)
 
     class Meta:
         model = User
@@ -22,16 +22,16 @@ class CustomUserInfoSerializer(serializers.ModelSerializer):
             "is_active",
             "phone_number",
             "avatar",
-            'first_name',
-            'last_name',
-            'info'
+            "first_name",
+            "last_name",
+            "info",
         ]
         read_only_fields = [
-            'id',
-            'username',
-            'email',
-            'full_name',
-            'is_active',
+            "id",
+            "username",
+            "email",
+            "full_name",
+            "is_active",
         ]
 
 
@@ -82,8 +82,8 @@ class UserLoginSerializer(serializers.Serializer):
             refresh = RefreshToken.for_user(user=user)
             access = refresh.access_token
             # add extra field to payload of jwt
-            access['email'] = user.email
-            
+            access["email"] = user.email
+
             attrs["user"] = user
             attrs["refresh"] = str(refresh)
             attrs["access"] = str(access)
@@ -142,3 +142,34 @@ class PasswordResetSerializer(serializers.Serializer):
         raise serializers.ValidationError(
             "passwords should be same with correct combination of email and user_id"
         )
+
+
+class PostSerializer(serializers.ModelSerializer):
+    author = serializers.StringRelatedField(read_only=True)
+    likes_count = serializers.IntegerField(source="get_likes_count", read_only=True)
+
+    class Meta:
+        model = Post
+        fields = [
+            "id",
+            "author",
+            "title",
+            "content",
+            "slug",
+            "image",
+            "likes_count",
+            "created_at",
+            "updated_at",
+            "status",
+        ]
+        read_only_fields = [
+            "id",
+            "slug",
+            "created_at",
+            "updated_at",
+        ]
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        validated_data["author"] = request.user
+        return Post.objects.create(**validated_data)
