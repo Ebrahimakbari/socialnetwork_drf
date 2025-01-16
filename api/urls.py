@@ -5,6 +5,7 @@ from rest_framework import routers
 router = routers.SimpleRouter()
 router.register(r"posts", views.PostViewSet, basename="posts")
 router.register(r"comments", views.CommentViewSet, basename="comments")
+router.register(r"likes", views.PostLikeViewSet, basename="post-like")
 
 urlpatterns = [
     path("sign-up/", views.UserSignupView.as_view(), name="sign_up"),

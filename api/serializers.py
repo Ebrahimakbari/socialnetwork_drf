@@ -11,6 +11,8 @@ User = get_user_model()
 
 class CustomUserInfoSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source="get_full_name", read_only=True)
+    likes = serializers.SerializerMethodField()
+    comments = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -24,7 +26,9 @@ class CustomUserInfoSerializer(serializers.ModelSerializer):
             "avatar",
             "first_name",
             "last_name",
+            "likes",
             "info",
+            "comments",
         ]
         read_only_fields = [
             "id",
@@ -32,7 +36,15 @@ class CustomUserInfoSerializer(serializers.ModelSerializer):
             "email",
             "full_name",
             "is_active",
+            "likes",
+            "comments",
         ]
+
+    def get_likes(self,obj):
+        return PostLikeSerializer(instance=obj.likes.all(), many=True, context=self.context).data
+    
+    def get_comments(self,obj):
+        return CommentSerializer(instance=obj.comments.all(), many=True, context=self.context).data
 
 
 class UserSignUpSerializer(serializers.ModelSerializer):
@@ -147,7 +159,6 @@ class PasswordResetSerializer(serializers.Serializer):
 class PostSerializer(serializers.ModelSerializer):
     author = serializers.StringRelatedField(read_only=True)
     likes_count = serializers.IntegerField(source="get_likes_count", read_only=True)
-
     class Meta:
         model = Post
         fields = [
@@ -207,3 +218,33 @@ class CommentSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         validated_data["user"] = request.user
         return super().create(validated_data)
+
+
+class PostLikeSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+    is_liked = serializers.BooleanField(required=True)
+    post = serializers.PrimaryKeyRelatedField(queryset=Post.objects.all())
+
+    class Meta:
+        model = PostLike
+        fields = [
+            'id',
+            'user',
+            'post',
+            'is_liked',
+            'created_at',
+        ]
+        read_only_fields = [
+            'id',
+            'created_at',
+        ]
+    
+    def create(self, validated_data):
+        request = self.context.get("request")
+        validated_data["user"] = request.user
+        return super().create(validated_data)
+
+    def to_representation(self, instance):
+        representations = super().to_representation(instance)
+        representations['post'] = PostSerializer(instance=instance.post, context=self.context).data
+        return representations
