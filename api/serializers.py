@@ -13,6 +13,9 @@ class CustomUserInfoSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source="get_full_name", read_only=True)
     likes = serializers.SerializerMethodField()
     comments = serializers.SerializerMethodField()
+    followings = serializers.SerializerMethodField()
+    follower = serializers.SerializerMethodField()
+    posts = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -29,6 +32,9 @@ class CustomUserInfoSerializer(serializers.ModelSerializer):
             "likes",
             "info",
             "comments",
+            "followings",
+            "follower",
+            "posts",
         ]
         read_only_fields = [
             "id",
@@ -38,6 +44,9 @@ class CustomUserInfoSerializer(serializers.ModelSerializer):
             "is_active",
             "likes",
             "comments",
+            "followings",
+            "follower",
+            "posts",
         ]
 
     def get_likes(self,obj):
@@ -45,6 +54,15 @@ class CustomUserInfoSerializer(serializers.ModelSerializer):
     
     def get_comments(self,obj):
         return CommentSerializer(instance=obj.comments.all(), many=True, context=self.context).data
+
+    def get_follower(self,obj):
+        return RelationSerializer(instance=obj.follower.all(), many=True, context=self.context).data
+
+    def get_followings(self,obj):
+        return RelationSerializer(instance=obj.followings.all(), many=True, context=self.context).data
+
+    def get_posts(self,obj):
+        return PostSerializer(instance=obj.posts.all(), many=True, context=self.context).data
 
 
 class UserSignUpSerializer(serializers.ModelSerializer):
@@ -248,3 +266,22 @@ class PostLikeSerializer(serializers.ModelSerializer):
         representations = super().to_representation(instance)
         representations['post'] = PostSerializer(instance=instance.post, context=self.context).data
         return representations
+
+
+class RelationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Relation
+        fields = [
+            'from_user',
+            'to_user',
+            'created',
+        ]
+        read_only_fields = [
+            'created',
+            'from_user',
+        ]
+    
+    def create(self, validated_data):
+        request = self.context.get('request')
+        validated_data['from_user'] = request.user
+        return super().create(validated_data)
