@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from .models import Post, Comment, PostLike, Relation
-from django.utils.text import slugify
 from rest_framework_simplejwt.tokens import RefreshToken
 from .authentications import authenticate
 from django.contrib.auth import get_user_model
