@@ -39,7 +39,6 @@ class CustomUserInfoSerializer(serializers.ModelSerializer):
             "id",
             "username",
             "email",
-            "full_name",
             "is_active",
             "likes",
             "comments",
@@ -176,6 +175,7 @@ class PasswordResetSerializer(serializers.Serializer):
 class PostSerializer(serializers.ModelSerializer):
     author = serializers.StringRelatedField(read_only=True)
     likes_count = serializers.IntegerField(source="get_likes_count", read_only=True)
+    comments = serializers.SerializerMethodField()
     class Meta:
         model = Post
         fields = [
@@ -189,18 +189,23 @@ class PostSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "status",
+            "comments",
         ]
         read_only_fields = [
             "id",
             "slug",
             "created_at",
             "updated_at",
+            "comments",
         ]
 
     def create(self, validated_data):
         request = self.context.get("request")
         validated_data["author"] = request.user
         return Post.objects.create(**validated_data)
+    
+    def get_comments(self, obj):
+        return CommentSerializer(instance=obj.comments.all(), many=True, context=self.context).data
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -222,6 +227,7 @@ class CommentSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "id",
             "created_at",
+            "replays",
         ]
 
     # To fetch nested replies
