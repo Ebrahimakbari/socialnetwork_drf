@@ -2,6 +2,7 @@ from rest_framework import views, viewsets
 from rest_framework import status
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
+from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Post, Comment, PostLike, Relation
 from permissions import IsOwnerOrReadonly
@@ -136,6 +137,7 @@ class PasswordResetView(views.APIView):
 
 
 class LogoutView(views.APIView):
+    permission_classes = [IsAuthenticated,]
     def post(self, request):
         refresh = request.data.get("refresh")
         if refresh:
@@ -158,6 +160,7 @@ class LogoutView(views.APIView):
 
 class UserInfoView(views.APIView):
     permission_classes = [
+        IsAuthenticated,
         IsOwnerOrReadonly,
     ]
 
@@ -181,6 +184,7 @@ class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.published.all()
     serializer_class = PostSerializer
     permission_classes = [
+        IsAuthenticated,
         IsOwnerOrReadonly,
     ]
 
@@ -189,6 +193,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [
+        IsAuthenticated,
         IsOwnerOrReadonly,
     ]
 
@@ -197,6 +202,7 @@ class PostLikeViewSet(viewsets.ModelViewSet):
     queryset = PostLike.objects.all()
     serializer_class = PostLikeSerializer
     permission_classes = [
+        IsAuthenticated,
         IsOwnerOrReadonly,
     ]
 
@@ -205,5 +211,6 @@ class RelationViewSet(viewsets.ModelViewSet):
     queryset = Relation.objects.all()
     serializer_class = RelationSerializer
     permission_classes = [
+        IsAuthenticated,
         IsOwnerOrReadonly,
     ]
